@@ -5,18 +5,60 @@ output:
     keep_md: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
 ```
 
-Jeremy Singer-Vine sends out a [newsletter](https://tinyletter.com/data-is-plural) every week where he highlights a number of interesting open datasets (you can explore all the datasets [here](https://docs.google.com/spreadsheets/d/1wZhPLMCHKJvwOkP4juclhjFgqIY8fQFMemwKL2c64vk/edit#gid=0)). At Mango we are all for open data so we thought we would also share some of the open datasets we think are Fun (with a capital F). 
+Jeremy Singer-Vine sends out a [newsletter](https://tinyletter.com/data-is-plural) every week where he highlights a number of interesting open datasets (you can explore all the datasets [here](https://docs.google.com/spreadsheets/d/1wZhPLMCHKJvwOkP4juclhjFgqIY8fQFMemwKL2c64vk/edit#gid=0)). At Mango we are all for open data so we thought we would also share some of the open datasets we think are fun to explore.  
 
-### religions of the UK
+### Open Food Facts
+[Open Food Facts](https://world.openfoodfacts.org/) is a collaborative, free and open database of food products. It is a prime example of how effective crowdsourcing your data is. People from around the world have collected details about more than 300.000 food products and uploaded the information through mobile apps. The data is available as a MongoDB dump, CSV export and an experimental API. We have downloaded the CSV export and wil try to visualise the ingredients across all products.
 
-### cause of deaths in  the US?
+```{r, collapse = TRUE}
+# http://world.openfoodfacts.org/data/en.openfoodfacts.org.products.csv
+foodFacts <- readr::read_tsv("data/en.openfoodfacts.org.products.csv")
+dim(foodFacts)
+```
+```{r}
+ingredients <- foodFacts %>%
+  # ideally, the unnest_tokens function is what we want but it required too much time
+  #tidytext::unnest_tokens(ingredient, ingredients_text,
+  #                        token = stringr::str_split, pattern=",|\\(|\\)|\\[|\\]") %>%
+  # so instead we chose a different approach involving mutate and unlist
+  # mutate will give us a list-column
+  mutate(ingredients = stringr::str_split(ingredients_text, pattern=",|\\(|\\)|\\[|\\]")) %>%
+  select(ingredients) %>%
+  # unlist will convert the list-column into a character vector
+  unlist() %>%
+  # enframe will convert the vector into a data frame which is easier to groupby
+  enframe() %>%
+  # now we clean up some of the text
+  mutate(value = stringr::str_replace(value, "org|organic", ""),
+         value = stringr::str_replace(value, "-> en:\\w+", ""),
+         value = stringr::str_replace_all(value, "'", ""),
+         value = stringr::str_trim(value)) %>%
+  # and finally filter some of the weirder entries
+  filter(value!="", value!=".",
+         !stringr::str_detect(value, "completed|\\d")) %>%
+  # to then group by and count the ingredients
+  count(value) %>%
+  arrange(desc(n))
+head(ingredients, 10)
+```
 
-### pet ownership (cat vs dog)
+There are no surprises at the top but further down there are a few ingredients that are odd. Let's create a word cloud to show the relative frequencies.
 
-### shark attacks?
+```{r}
+library(wordcloud)
+top100 <- head(ingredients, 100)
+wordcloud::wordcloud(top100$value, top100$n)
+```
 
-### car ownership?
+Ingredients are only one aspect of this very interesting dataset. We could go on and look at the co-occurence of certain ingredients (using network analysis) and then continue analysing their quantities. We could also include the data on nutritional value and calculate correlations. The data could also use some more cleaning considering there some ingredients are in different languages (water, eau).
+
+### North Korea Missile Attacks
+```{r}
+
+```
+
