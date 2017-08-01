@@ -15,12 +15,12 @@ Jeremy Singer-Vine sends out a [newsletter](https://tinyletter.com/data-is-plura
 ### Open Food Facts
 [Open Food Facts](https://world.openfoodfacts.org/) is a collaborative, free and open database of food products. It is a prime example of how effective crowdsourcing your data is. People from around the world have collected details about more than 300.000 food products and uploaded the information through mobile apps. The data is available as a MongoDB dump, CSV export and an experimental API. We have downloaded the CSV export and wil try to visualise the ingredients across all products.
 
-```{r, collapse = TRUE}
+```{r, eval=FALSE, collapse=TRUE, include=FALSE}
 # http://world.openfoodfacts.org/data/en.openfoodfacts.org.products.csv
 foodFacts <- readr::read_tsv("data/en.openfoodfacts.org.products.csv")
 dim(foodFacts)
 ```
-```{r}
+```{r, eval=FALSE, include=FALSE}
 ingredients <- foodFacts %>%
   # ideally, the unnest_tokens function is what we want but it was too slow
   #tidytext::unnest_tokens(ingredient, ingredients_text,
@@ -48,7 +48,7 @@ head(ingredients, 10)
 
 There are no surprises at the top but further down there are a few ingredients that are odd. Let's create a word cloud to show the relative frequencies.
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 library(wordcloud)
 top100 <- head(ingredients, 100)
 wordcloud::wordcloud(top100$value, top100$n)
@@ -57,7 +57,83 @@ wordcloud::wordcloud(top100$value, top100$n)
 Ingredients are only one aspect of this very interesting dataset. We could go on and look at the co-occurence of certain ingredients (using network analysis) and then continue analysing their quantities. We could also include the data on nutritional value and calculate correlations. The data could also use some more cleaning considering there some ingredients in different languages (e.g. water and eau).
 
 ### North Korea Missile Attacks
-```{r}
+```{r, eval=FALSE, include=FALSE}
 
 ```
 
+
+
+### Food prices
+Following in the edible theme, [VAM](http://vam.wfp.org/) collate commodity prices from the globes poorer nations and use them in helping to
+identify food insecurity hotspots. The data we will be using can be downloaded [here](https://data.humdata.org/dataset/wfp-food-prices),
+from which we'll attempt to visulaise how prices have changed over the past 20 years.
+
+```{r, eval=TRUE, collapse=TRUE, include=TRUE}
+# https://data.humdata.org/dataset/wfp-food-prices
+#Providing column names and types to make workings easier later on
+colnames <- c("Country_ID", "Country", "Region_ID", "Region", "Market_ID", "Market", 
+              "Commodity_ID", "Commodity", "Currency_ID", "Currency", "Sector_ID", "Sector",
+              "Units_ID", "Units", "Month", "Year", "Price", "Commodity_Source")
+coltypes <- cols(Year = "n", Price = "n", Month = "n")
+foodPrices <- read_csv("data/WFPVAM_FoodPrices_13-03-2017.csv", 
+                       col_names = colnames,
+                       col_types = coltypes) %>%
+  filter(row_number() != 1)
+
+#Large number of commodities - won't be able to plot them all!
+length(unique(foodPrices$Commodity))
+```
+
+```{r, eval=TRUE, include=TRUE}
+#Overall price trend - trend of all commodity prices over time
+overallPriceTrend <- foodPrices %>%
+  group_by(Commodity, Year) %>%
+  #As different commodities will clearly have different prices, we'll make
+  #them comparable by scaling based on their max price within our timeframe
+  summarise(globalAveragePrice = mean(Price)/max(Price))
+
+#Food prices trend over time, grouped by commodity - same as above, 
+#this time selecting a smaller sample for plotting
+commodoties <- c("Wheat", "Milk", "Coffee", "Bananas", "Sugar")
+priceTrend <- foodPrices %>%
+  select(Price, Commodity, Year) %>%
+  #selecting our reduced commodities
+  filter(Commodity %in% commodoties) %>%
+  group_by(Commodity, Year) %>%
+  summarise(globalAveragePrice = mean(Price)/max(Price))
+
+priceTrend
+```
+We can see what our data looks like for each commodity.
+
+Now lets create a graphic.
+```{r, eval=TRUE, include=TRUE}
+library(forcats)
+#We'll create a ggplot graphic, using geom_smooth
+#Specify some colours semi-related to their genuine appearence
+colours <- c("Bananas" = "#fea814", "Coffee" = "#383838", "Sugar" = "#4fcfff", 
+             "Milk" = "#cccccc", "Wheat" = "#005692")
+#Specify commodity levels for use in our legend
+fctLevels <- c("Coffee", "Bananas", "Milk", "Sugar", "Wheat")
+ggplot(priceTrend, aes(x = Year, y = globalAveragePrice)) +
+  geom_smooth(aes(colour = fct_relevel(Commodity, fctLevels)), se = FALSE, size = 1.8, linetype = 5) +
+  geom_smooth(data = overallPriceTrend, colour = "red", se = FALSE, size = 3.5) +
+  geom_line(aes(size = "All Commodities", linetype = NA), colour = "red") +
+  scale_colour_manual(values = colours) +
+  scale_x_continuous(breaks = seq(1992, 2017, 2)) +
+  scale_y_continuous(limits = c(0, 1), labels = c("Min", "Max"), breaks = c(0, 1)) +
+  labs(title = "Average Global Commodity Prices over Time",
+       subtitle = "Commodity Price Relative to Max in Period",
+       caption = "Data from https://data.humdata.org/dataset/wfp-food-prices",
+       x = "", 
+       y = "",
+       colour = "Commodity",
+       size = "") +
+  theme_classic()
+```
+
+The trend for our selected commodities seems to show a gradual decrease in prices, as all but coffee and milk prices are now lower than
+at the beginning of our timeframe. This is somewhat reflected in our overall price trend, as we can see there has been a slight downward trend, although this has been somewhat negated in the past three years.
+
+In our analysis we took only a meer peek into the dataset. For example, we could look at seasonality trends, subset by country or region or even by market. Indeed it could be taken a step further, as VAM have, and be used as a tool for predicting when and where food security will
+occur in the future.
