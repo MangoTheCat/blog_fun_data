@@ -1,5 +1,5 @@
 ---
-title: 'Fun data: open data with a sense of humour'
+title: 'Fun data: open data that is fun to analyse'
 output: 
   html_document:
     keep_md: true
@@ -22,13 +22,12 @@ dim(foodFacts)
 ```
 ```{r}
 ingredients <- foodFacts %>%
-  # ideally, the unnest_tokens function is what we want but it required too much time
+  # ideally, the unnest_tokens function is what we want but it was too slow
   #tidytext::unnest_tokens(ingredient, ingredients_text,
   #                        token = stringr::str_split, pattern=",|\\(|\\)|\\[|\\]") %>%
-  # so instead we chose a different approach involving mutate and unlist
-  # mutate will give us a list-column
-  mutate(ingredients = stringr::str_split(ingredients_text, pattern=",|\\(|\\)|\\[|\\]")) %>%
-  select(ingredients) %>%
+  # so instead we chose a different approach involving transmute and unlist
+  # transmute will give us a list-column
+  transmute(ingredients = stringr::str_split(ingredients_text, pattern=",|\\(|\\)|\\[|\\]")) %>%
   # unlist will convert the list-column into a character vector
   unlist() %>%
   # enframe will convert the vector into a data frame which is easier to groupby
@@ -55,7 +54,7 @@ top100 <- head(ingredients, 100)
 wordcloud::wordcloud(top100$value, top100$n)
 ```
 
-Ingredients are only one aspect of this very interesting dataset. We could go on and look at the co-occurence of certain ingredients (using network analysis) and then continue analysing their quantities. We could also include the data on nutritional value and calculate correlations. The data could also use some more cleaning considering there some ingredients are in different languages (water, eau).
+Ingredients are only one aspect of this very interesting dataset. We could go on and look at the co-occurence of certain ingredients (using network analysis) and then continue analysing their quantities. We could also include the data on nutritional value and calculate correlations. The data could also use some more cleaning considering there some ingredients in different languages (e.g. water and eau).
 
 ### North Korea Missile Attacks
 ```{r}
