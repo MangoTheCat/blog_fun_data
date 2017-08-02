@@ -6,7 +6,7 @@ output:
 ---
 
 ```{r setup, include=FALSE, message = FALSE, warning = FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, out.width='900px', dpi=200)
 library(tidyverse)
 ```
 
@@ -75,7 +75,7 @@ colnames <- c("Country_ID", "Country", "Region_ID", "Region", "Market_ID", "Mark
               "Commodity_ID", "Commodity", "Currency_ID", "Currency", "Sector_ID", "Sector",
               "Units_ID", "Units", "Month", "Year", "Price", "Commodity_Source")
 coltypes <- cols(Year = "n", Price = "n", Month = "n")
-foodPrices <- read_csv("data/WFPVAM_FoodPrices_13-03-2017.csv", 
+foodPrices <- read_csv("data/FoodPrices/WFPVAM_FoodPrices_13-03-2017.csv", 
                        col_names = colnames,
                        col_types = coltypes) %>%
   filter(row_number() != 1)
@@ -137,3 +137,98 @@ at the beginning of our timeframe. This is somewhat reflected in our overall pri
 
 In our analysis we took only a meer peek into the dataset. For example, we could look at seasonality trends, subset by country or region or even by market. Indeed it could be taken a step further, as VAM have, and be used as a tool for predicting when and where food security will
 occur in the future.
+
+
+### Flight Delays
+The [Bureau of Transportation Statistics](https://www.bts.gov/) are a leading source of U.S. transportation systems data, helping
+to shape transportation policy and researh projects across the US. I pulled through their [data](https://www.transtats.bts.gov/DL_SelectFields.asp), selecting the Month and DayOfWeek fields, as well as Departure and Arrival delays. The site only allows us to download data one month at a time, so we need to begin by reading in 12 files to a list and binding
+them together.
+
+```{r, eval=TRUE, collapse=TRUE, include=TRUE}
+# https://www.transtats.bts.gov/DL_SelectFields.asp
+#Month files were downloaded to separate csvs, so we'll read them into list
+files <- list.files(path = "data/FlightData/", pattern = "*.csv", full.names = TRUE)
+myFiles <- lapply(files, read_csv)
+
+#And then join into one dataframe using bind_rows
+flightsRaw <- do.call(bind_rows, myFiles)
+```
+
+Now lets recode our Months and Weekdays to be character names, rather than just integers. Then we can prepare our data for plotting. In
+this plot, we'll be aiming to plot the difference between departure and arrival delays, grouped by Weekday and Month.
+```{r, eval=TRUE, include=TRUE}
+#Begin by renaming integer values to days of the week and months
+flightData <- flightsRaw %>%
+  mutate(DAY_OF_WEEK = as.factor(DAY_OF_WEEK),
+         DAY_OF_WEEK = fct_recode(DAY_OF_WEEK, Monday = "1", Tuesday = "2", Wenesday = "3",
+                              Thursday = "4", Friday = "5", Saturday = "6", Sunday = "7"),
+         MONTH = as.factor(MONTH),
+         MONTH = fct_recode(MONTH, January = "1", February = "2", March = "3", April = "4",
+                            May = "5", June = "6", July = "7", August = "8", September = "9",
+                            October = "10", November = "11", December = "12"))
+
+#Summarise the data to show the mean delay/arrival time split by Month and Weekday
+monthDayDelays <- flightData %>%
+  select(DEP_DELAY, ARR_DELAY, MONTH, DAY_OF_WEEK) %>%
+  group_by(MONTH, DAY_OF_WEEK) %>%
+  #Calculate means split by Month and Weekday
+  summarise(Departures = mean(DEP_DELAY, na.rm = TRUE), Arrivals = mean(ARR_DELAY, na.rm = TRUE)) %>%
+  filter(!is.na(MONTH)) %>%
+  ungroup() %>%
+  #Gather our data so Depature and Arrival delay times are stored within one column
+  gather(key = delayType, value = Delay, Arrivals, Departures) %>%
+  #Reorder Departure/Arrival factors so Depatures appear first in our graphic
+  mutate(delayType = fct_rev(delayType))
+monthDayDelays
+```
+We now have our Delay times in one coloumn, with delayType either arrival or departure. We also have our Month and Weekday columns for 
+grouping our data in the plot.
+
+Now lets create a graphic. Note, the colours used for our graphic were obtained from [Color Brewer 2.0](http://colorbrewer2.org).
+```{r, eval=TRUE, include=TRUE}
+#Specify colours vector for use in scale_fill_manual.
+colours <- c("#ffffb2", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#b10026")
+#Graphic
+ggplot(monthDayDelays, aes(x = MONTH, y = Delay)) +
+  #Adding reference lines to our (soon to become) circular chart
+  geom_hline(yintercept = seq(0, 20, by = 5), alpha = 0.1) +
+  #Bars for every day of the week grouped by month
+  geom_bar(stat = "identity", aes(fill = DAY_OF_WEEK), position = "dodge", colour = "black") +
+  #This bit is hacky. To get a single label to appear on our reference lines at zero degrees, we select a
+  #single datapoint from January (Month at zero degrees) and use it as our data argument.
+  #monthDayDelays[1, ] is a datapoint for mean Arrival time in January 
+  geom_text(data = monthDayDelays[1, ], y = 5, label = "5", size = 3) +
+  geom_text(data = monthDayDelays[1, ], y = 10, label = "10", size = 3) +
+  geom_text(data = monthDayDelays[1, ], y = 15, label = "15", size = 3) +
+  geom_text(data = monthDayDelays[1, ], y = 20, label = "20", size = 3) +
+  #monthDayDelays[85, ] is a datapoint for mean Departure time in January 
+  geom_text(data = monthDayDelays[85, ], y = 10, label = "10", size = 3) +
+  geom_text(data = monthDayDelays[85, ], y = 15, label = "15", size = 3) +
+  geom_text(data = monthDayDelays[85, ], y = 20, label = "20", size = 3) +
+  #Specify colours for chart
+  scale_fill_manual(values = rev(colours)) + 
+  #Remove yAxis scale from side of plot
+  scale_y_continuous(breaks = NULL) +
+  #Make plot circular, starting at due north
+  coord_polar(theta = "x", start = -pi/12) + 
+  #Separate our departure and arrival plots
+  facet_wrap(~delayType, labeller = label_parsed) +
+  #Add labels
+  labs(title = "Average Minute Delay of American Flights - 2016",
+       x = "",
+       y = "", 
+       fill = "",
+       caption = "Data from https://www.transtats.bts.gov/DL_SelectFields.asp") +
+  theme_minimal(base_size = 8) +
+  #Make our facet titles pretty
+  theme(strip.text.x = element_text(size = 15, colour = "#f03b20"))
+```
+
+Interestingly, we can see that even if your flight is delayed, you can expect that delay to have reduced upon arrival. In fact,
+on average 5 minutes and 25 seconds will be recovered during air time.
+
+Perhaps not so interestingly, we can see that the months with the longest delays fall in the summer and winter holidays. Conversely,
+if you're not bound by school holidays, November looks to be an excellent time to travel, as you can expect to arrive a whole
+2 minutes early!
+
+Again with this analysis, there are many more pathways we could explore. For example, [FiveThirtyEight](https://projects.fivethirtyeight.com/flights/) have produced a similar delay chart, only this time grouped by airport. This, when combined with our brief analysis, makes your dream, undelayed, vacation a possible reality!!
