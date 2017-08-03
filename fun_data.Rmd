@@ -204,7 +204,7 @@ them together.
 
 ```{r, collapse=TRUE}
 # https://www.transtats.bts.gov/DL_SelectFields.asp
-#Month files were downloaded to separate csvs, so we'll read them in and combine them
+# Month files were downloaded to separate csvs, so we'll read them in and combine them
 files <- list.files(path = "data/FlightData/", pattern = "*.csv", full.names = TRUE)
 flightsRaw <- map_df(files, read_csv)
 ```

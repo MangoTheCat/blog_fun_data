@@ -259,7 +259,7 @@ them together.
 
 ```r
 # https://www.transtats.bts.gov/DL_SelectFields.asp
-#Month files were downloaded to separate csvs, so we'll read them in and combine them
+# Month files were downloaded to separate csvs, so we'll read them in and combine them
 files <- list.files(path = "data/FlightData/", pattern = "*.csv", full.names = TRUE)
 flightsRaw <- map_df(files, read_csv)
 ```
@@ -294,7 +294,7 @@ monthDayDelays
 ```
 
 ```
-## # A tibble: 140 x 4
+## # A tibble: 168 x 4
 ##       MONTH DAY_OF_WEEK delayType       Delay
 ##      <fctr>      <fctr>    <fctr>       <dbl>
 ##  1  January      Monday  Arrivals  3.08526171
@@ -307,7 +307,7 @@ monthDayDelays
 ##  8 February      Monday  Arrivals  1.30443327
 ##  9 February     Tuesday  Arrivals  5.09620906
 ## 10 February    Wenesday  Arrivals  3.00267779
-## # ... with 130 more rows
+## # ... with 158 more rows
 ```
 We now have our Delay times in one column, with delayType either arrival or departure. We also have our Month and Weekday columns for 
 grouping our data in the plot.
