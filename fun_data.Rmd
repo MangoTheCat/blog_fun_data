@@ -1,5 +1,6 @@
 ---
 title: 'Fun data: open data that is fun to analyse'
+author: "Joe Russel, Adnan Fiaz"
 output: 
   html_document:
     toc: true
