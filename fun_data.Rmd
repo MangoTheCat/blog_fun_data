@@ -1,6 +1,6 @@
 ---
 title: 'Fun data: open data that is fun to analyse'
-author: "Joe Russel, Adnan Fiaz"
+author: "Joe Russell, Adnan Fiaz"
 output: 
   html_document:
     toc: true
@@ -136,7 +136,7 @@ at the beginning of our timeframe. This is somewhat reflected in our overall pri
 In our analysis we took only a mere peek into the dataset. For example, we could look at seasonality trends, subset by country or region or even by market. Indeed it could be taken a step further, as VAM have, and be used as a tool for predicting when and where food security will
 occur in the future.
 
-### North Korea Missile Attacks
+### North Korea Missile Tests
 The next dataset is from the James Martin Center for Nonproliferation Studies (CNS) North Korea Missile Test Database. We agree it's not a fun topic but we also wanted to show the breadth of open data that is out there. You can get the data as an [Excel file](https://www.nti.org/documents/2137/north_korea_missile_test_database.xlsx) but it is also hosted on [data.world](https://data.world/ian/the-cns-north-korea-missile-test-database). And fortunately for the R community data.world have a R package to access their API.   
 
 ```{r}
@@ -210,7 +210,7 @@ files <- list.files(path = "data/FlightData/", pattern = "*.csv", full.names = T
 flightsRaw <- map_df(files, read_csv)
 ```
 
-Now lets recode our Months and Weekdays to be character names, rather than just integers. Then we can prepare our data for plotting. In
+Now let's recode our Months and Weekdays to be character names, rather than just integers. Then we can prepare our data for plotting. In
 this plot, we'll be aiming to plot the difference between departure and arrival delays, grouped by Weekday and Month.
 ```{r}
 #Begin by renaming integer values to days of the week and months

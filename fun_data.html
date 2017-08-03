@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Joe Russel, Adnan Fiaz" />
+<meta name="author" content="Joe Russell, Adnan Fiaz" />
 
 
 <title>Fun data: open data that is fun to analyse</title>
@@ -117,7 +117,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Fun data: open data that is fun to analyse</h1>
-<h4 class="author"><em>Joe Russel, Adnan Fiaz</em></h4>
+<h4 class="author"><em>Joe Russell, Adnan Fiaz</em></h4>
 
 </div>
 
@@ -125,7 +125,7 @@ $(document).ready(function () {
 <ul>
 <li><a href="#open-food-facts">Open Food Facts</a></li>
 <li><a href="#food-prices">Food prices</a></li>
-<li><a href="#north-korea-missile-attacks">North Korea Missile Attacks</a></li>
+<li><a href="#north-korea-missile-tests">North Korea Missile Tests</a></li>
 <li><a href="#flight-delays">Flight Delays</a></li>
 </ul>
 </div>
@@ -260,8 +260,8 @@ ggplot(priceTrend, aes(x = Year, y = globalAveragePrice)) +
 <p>The trend for our selected commodities seems to show a gradual decrease in prices, as all but coffee and milk prices are now lower than at the beginning of our timeframe. This is somewhat reflected in our overall price trend, as we can see there has been a slight downward trend, although this has been somewhat negated in the past three years.</p>
 <p>In our analysis we took only a mere peek into the dataset. For example, we could look at seasonality trends, subset by country or region or even by market. Indeed it could be taken a step further, as VAM have, and be used as a tool for predicting when and where food security will occur in the future.</p>
 </div>
-<div id="north-korea-missile-attacks" class="section level3">
-<h3>North Korea Missile Attacks</h3>
+<div id="north-korea-missile-tests" class="section level3">
+<h3>North Korea Missile Tests</h3>
 <p>The next dataset is from the James Martin Center for Nonproliferation Studies (CNS) North Korea Missile Test Database. We agree it’s not a fun topic but we also wanted to show the breadth of open data that is out there. You can get the data as an <a href="https://www.nti.org/documents/2137/north_korea_missile_test_database.xlsx">Excel file</a> but it is also hosted on <a href="https://data.world/ian/the-cns-north-korea-missile-test-database">data.world</a>. And fortunately for the R community data.world have a R package to access their API.</p>
 <pre class="r"><code>library(data.world)
 # We've set the configuration in a previous session
@@ -329,7 +329,7 @@ ggmap(nk, extent = &quot;panel&quot;) +
 # Month files were downloaded to separate csvs, so we'll read them in and combine them
 files &lt;- list.files(path = &quot;data/FlightData/&quot;, pattern = &quot;*.csv&quot;, full.names = TRUE)
 flightsRaw &lt;- map_df(files, read_csv)</code></pre>
-<p>Now lets recode our Months and Weekdays to be character names, rather than just integers. Then we can prepare our data for plotting. In this plot, we’ll be aiming to plot the difference between departure and arrival delays, grouped by Weekday and Month.</p>
+<p>Now let’s recode our Months and Weekdays to be character names, rather than just integers. Then we can prepare our data for plotting. In this plot, we’ll be aiming to plot the difference between departure and arrival delays, grouped by Weekday and Month.</p>
 <pre class="r"><code>#Begin by renaming integer values to days of the week and months
 flightData &lt;- flightsRaw %&gt;%
   mutate(DAY_OF_WEEK = as.factor(DAY_OF_WEEK),
